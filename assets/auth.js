@@ -5,13 +5,13 @@ export const configured=Boolean(config.supabaseUrl&&config.supabasePublishableKe
 let clientPromise;
 export function client(){
  if(!configured)return Promise.resolve(null);
- if(!clientPromise)clientPromise=(async()=>{const {createClient}=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.8/+esm');return createClient(config.supabaseUrl,config.supabasePublishableKey,{auth:{flowType:'pkce',persistSession:true,storage:sessionStorage,autoRefreshToken:true,detectSessionInUrl:true}})})();
+ if(!clientPromise)clientPromise=(async()=>{const {createClient}=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/+esm');return createClient(config.supabaseUrl,config.supabasePublishableKey,{auth:{flowType:'pkce',persistSession:true,storage:sessionStorage,autoRefreshToken:true,detectSessionInUrl:true}})})();
  return clientPromise;
 }
 export async function currentUser(){const c=await client();if(!c)return null;const {data,error}=await c.auth.getUser();if(error){if(error.name==='AuthSessionMissingError')return null;throw error}return data.user}
 export async function recoveryClient(){
  if(!configured)throw new Error('Account recovery is not configured.');
- const {createClient}=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.8/+esm');
+ const {createClient}=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/+esm');
  const baseKey='sb-'+new URL(config.supabaseUrl).hostname.split('.')[0]+'-auth-token';
  const storageKey=baseKey+'-recovery';
  let browserStorage;try{browserStorage=globalThis.sessionStorage}catch{}

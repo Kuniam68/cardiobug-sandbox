@@ -5,6 +5,7 @@ Scope: `Kuniam68/cardiobug-sandbox`, Supabase `szqiueneqmktiilagbdv` only. Produ
 ## Fixed and regression-tested
 
 - All 21 social-preview image URLs now use the sandbox path. Removed the duplicate recovery-page robots directive.
+- Updated both frontend Supabase clients from 2.49.8 to 2.50.0 (Auth SDK 2.70.0). The previous dependency tree reported two low-severity advisories for malformed administrator-user routing; these methods are not called by this frontend. The patched dependency tree reports zero npm advisories.
 - Sign-in, an email token landing page, now sends no referrers, matching recovery-page privacy protection.
 - Escape closes expanded mobile navigation and returns focus to its toggle.
 - Authentication and informational pages no longer await unrelated course/classification/price reads. Learning pages retain authoritative access checks and read-only price retrieval.
@@ -12,7 +13,7 @@ Scope: `Kuniam68/cardiobug-sandbox`, Supabase `szqiueneqmktiilagbdv` only. Produ
 
 ## Results before deployment
 
-- Sandbox: 71 test cases passed; 0 failed; 0 skipped.
+- Sandbox: 72 test cases passed; 0 failed; 0 skipped.
 - Reviewed local payment implementation: 60 cases passed; 0 failed; 0 skipped. This includes local database fixtures for restrictive/permissive grants, transaction rollback, paid content isolation, immutable order amounts, currencies, receipt tampering, replay and sandbox restrictions. Payment scenarios run only in local fixtures, never as hosted orders.
 - Static validation: 21 HTML pages passed local file, link, anchor, duplicate-ID and manifest checks.
 - Headless Chromium: 16 routes at 1280px and 390px, 32 cases passed against the fixed local frontend using sandbox anonymous reads. No page JavaScript errors, horizontal overflow, failed UI checks, or axe-core 4.11.0 WCAG A/AA findings in the tested top-level documents.
@@ -29,6 +30,8 @@ The owner authorized a one-time enrollment inside an explicit transaction ending
 - A synthetic non-enrolled role/UUID context could not see the student's enrollment or retrieve its lesson; this was a database simulation, not an Auth account or browser session.
 - Anonymous private access remained denied.
 - The transaction rolled back. Independent reads confirmed zero enrollments, progress, orders and payment events.
+- An additional rollback-only progress test verified owned progress saves, cross-user RLS denial and foreign-key rejection of invalid lessons or progress without enrollment. Its enrollment and progress were both rolled back, with zero records independently confirmed.
+- Live anonymous HTTP calls to protected-content, course-save and archive RPCs were denied before execution.
 - The existing administrator's read-only retrieval still matched the original payload.
 - All 13 public tables have RLS; administrator membership mutations and settlement RPC execution are unavailable to students. No SECURITY DEFINER function has blanket PUBLIC EXECUTE grants.
 
@@ -48,6 +51,8 @@ Performance: three overlapping permissive SELECT-policy warnings (academy_course
 Health: no findings.
 
 References: [anonymous definer](https://supabase.com/docs/guides/database/database-linter?lint=0028_anon_security_definer_function_executable), [authenticated definer](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable), [RLS without policies](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy), [password protection](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection), [overlapping policies](https://supabase.com/docs/guides/database/database-linter?lint=0006_multiple_permissive_policies), [unused index](https://supabase.com/docs/guides/database/database-linter?lint=0005_unused_index).
+
+Post-deployment Chromium verification also passed all 21 routes at desktop/mobile sizes (42 cases) after the first frontend batch. The patched-SDK batch also passed all 42 local browser cases; final deployed verification is performed after its push.
 
 ## Limits and review readiness
 

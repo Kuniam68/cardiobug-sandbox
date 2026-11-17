@@ -31,6 +31,14 @@ test('email token landing pages suppress referrers before scripts run',()=>{
     assert.ok(html.indexOf('name="referrer"')<html.indexOf('<script'));
   }
 });
+test('normal and recovery clients both pin the patched Supabase SDK',()=>{
+  const auth=readFileSync(new URL('assets/auth.js',root),'utf8');
+  const urls=[...auth.matchAll(/import\('(https:[^']+)'\)/g)].map(m=>m[1]);
+  assert.deepEqual(urls,[
+    'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/+esm',
+    'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/+esm'
+  ]);
+});
 test('redirects reject external, executable, traversal and lookalike routes',()=>{
   const current='https://kuniam68.github.io/cardiobug-sandbox/signin.html';
   for(const next of ['https://evil.example/dashboard.html','//evil.example/admin.html','javascript:alert(1)',
