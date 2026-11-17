@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
 import {createStudentAccess,studentCourseControls} from '../assets/student-access.js';
+import {studentPriceSummary,hasAvailablePrice} from '../assets/student-prices.js';
 
 function source(paid,access=false,user={id:'student'}) {
   const calls=[];
@@ -75,7 +76,7 @@ test('already authorized paid students do not self-enroll',async()=>{
   assert.equal(await h.context.enroll('fixture-course'),true);assert.equal(h.writes.length,0);
 });
 
-async function renderStudent({paid,access=false,checkout=false,lesson=false,failed=false}) {
+async function renderStudent({paid,access=false,checkout=false,lesson=false,failed=false,priceRows={BDT:10000,USD:500},priceFailure=false}) {
   const c={id:'fixture-course',title:'Fixture',subtitle:'Fixture course',category:'Testing',level:'Beginner',
     minutes:1,art:'anatomy',description:'Synthetic test',outcomes:['Learn'],sources:[],isSample:false,
     lessons:[{id:'fixture-lesson',title:'Lesson',minutes:1,body:'PRIVATE_MARKER',options:['a','b','c']} ]};
@@ -87,7 +88,7 @@ async function renderStudent({paid,access=false,checkout=false,lesson=false,fail
     URLSearchParams,config:{},configured:true,courses:[c],getCourse:id=>id===c.id?c:null,loadCourses:async()=>{},catalogStatus:'live',
     sandboxEnabled:()=>checkout,paymentCatalog:async()=>{if(failed)throw new Error('Network');return new Set(paid?[c.id]:[])},
     protectedCourse:async()=>{if(failed)throw new Error('Network');return {access:{paid,access:!paid||access}}},
-    studentCourseControls,currentUser:async()=>null});
+    studentCourseControls,studentPriceSummary,hasAvailablePrice,client:async()=>null,readStudentPrices:async()=>{if(priceFailure)throw new Error('Price request failed');return new Map([[c.id,priceRows]])},currentUser:async()=>null});
   const source=readFileSync(new URL('../assets/app.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'');
   await vm.runInContext('(async()=>{'+source+'})()',context);
   return {detail:detail.innerHTML,lesson:lessonPage.innerHTML,grid:grid.innerHTML};
@@ -129,4 +130,44 @@ test('paid student with verified access can read lessons with checkout disabled'
 test('availability failure disables enrollment and hides paid content',async()=>{
   const html=await renderStudent({paid:true,failed:true});
   assert.match(html.detail,/AVAILABILITY UNVERIFIED/);assert.match(html.detail,/id="enroll" disabled/);
+});
+
+test('cards and course details show both independent prices while checkout is disabled',async()=>{
+  const html=await renderStudent({paid:true});
+  for(const view of [html.grid,html.detail]){
+    assert.match(view,/BDT<\/strong> <span>৳100\.00/);
+    assert.match(view,/USD<\/strong> <span>\$5\.00/);
+    assert.match(view,/Payments unavailable/);
+    assert.doesNotMatch(view,/Free course|SELF-PACED · FREE|Preview first lesson/);
+  }
+  assert.match(html.detail,/id="enroll" disabled/);
+});
+test('price request failures keep paid cards and details locked',async()=>{
+  const html=await renderStudent({paid:true,priceFailure:true});
+  for(const view of [html.grid,html.detail]){
+    assert.match(view,/Price unavailable/);
+    assert.doesNotMatch(view,/Free course|SELF-PACED · FREE/);
+  }
+  assert.match(html.detail,/id="enroll" disabled/);
+});
+test('missing and invalid amounts never become free controls, even with checkout simulated on',async()=>{
+  for(const priceRows of [undefined,{}, {BDT:0,USD:-1},{BDT:'10000',USD:Infinity}]){
+    const html=await renderStudent({paid:true,priceRows:priceRows??{},checkout:true});
+    assert.match(html.detail,/id="enroll" disabled/);
+    assert.match(html.detail,/prices unavailable/);
+    assert.doesNotMatch(html.detail,/SELF-PACED · FREE|Preview first lesson/);
+  }
+});
+test('one missing currency does not hide the independently available price',async()=>{
+  const html=await renderStudent({paid:true,priceRows:{BDT:10000,USD:null}});
+  assert.match(html.detail,/৳100\.00/);assert.match(html.detail,/<strong>USD<\/strong> <span>Price unavailable/);
+});
+test('ordinary free cards and details do not acquire paid pricing messages',async()=>{
+  const html=await renderStudent({paid:false,priceFailure:true});
+  assert.doesNotMatch(html.grid+html.detail,/course-prices|Payments unavailable|Price unavailable/);
+  assert.match(html.detail,/Enroll & save progress/);
+});
+test('existing paid access stays available even when pricing fails',async()=>{
+  const html=await renderStudent({paid:true,access:true,priceFailure:true});
+  assert.match(html.detail,/Continue learning/);assert.doesNotMatch(html.detail,/id="enroll" disabled/);
 });
