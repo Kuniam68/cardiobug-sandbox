@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test tests/*.test.mjs",
+    "test": "node --test tests/*.test.mjs tests/payments/*.test.mjs",
     "check": "python3 scripts/check_site.py"
   }
 }

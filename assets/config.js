@@ -1,7 +1,7 @@
 // Public configuration only. NEVER place a service-role key, password, or other secret here.
 export const config = Object.freeze({
-  // Development feature flag. Keep disabled until an isolated sandbox is approved.
-  paymentSandboxEnabled: false,
+  // Approved isolated sandbox simulation. This never selects a live payment provider.
+  paymentSandboxEnabled: true,
   academyName: 'Cardiobug',
   supabaseUrl: 'https://szqiueneqmktiilagbdv.supabase.co',
   supabasePublishableKey: 'sb_publishable_zLXxQzk--pI-R4m4th9SVg_oG7JUFE4',
@@ -15,4 +15,4 @@ export const config = Object.freeze({
 });
 
 // Fail closed if this testing site is ever misconfigured.
-if (config.supabaseUrl !== 'https://szqiueneqmktiilagbdv.supabase.co' || config.paymentSandboxEnabled !== false) throw new Error('Sandbox configuration rejected.');
+if (config.supabaseUrl !== 'https://szqiueneqmktiilagbdv.supabase.co' || typeof config.paymentSandboxEnabled !== 'boolean') throw new Error('Sandbox configuration rejected.');

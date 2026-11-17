@@ -1,7 +1,7 @@
-import {config} from './config.js';
-import {client,currentUser} from './auth.js';
-import {normalizeCourse} from './course-model.js';
-import {createStudentAccess} from './student-access.js';
+import {config} from './config.js?v=trial-1';
+import {client,currentUser} from './auth.js?v=trial-1';
+import {normalizeCourse} from './course-model.js?v=trial-1';
+import {createStudentAccess} from './student-access.js?v=trial-1';
 const studentAccess=createStudentAccess({getClient:client,getUser:currentUser});
 export const sandboxEnabled=()=>config.paymentSandboxEnabled===true;
 export function assertPaymentSandbox(){if(!sandboxEnabled())throw new Error('The payment sandbox is disabled.');const url=new URL(config.supabaseUrl);if(url.hostname!=='szqiueneqmktiilagbdv.supabase.co')throw new Error('Use a separate sandbox Supabase project for payment testing.');}

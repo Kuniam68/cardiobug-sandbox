@@ -1,6 +1,6 @@
-import {paymentRequest,assertPaymentSandbox} from './payments.js';
-import {decimalToMinor,minorToDecimal} from './money.js';
-import {client,currentUser} from './auth.js';
+import {paymentRequest,assertPaymentSandbox} from './payments.js?v=trial-1';
+import {decimalToMinor,minorToDecimal} from './money.js?v=trial-1';
+import {client,currentUser} from './auth.js?v=trial-1';
 const form=document.getElementById('pricing-form'),notice=document.getElementById('pricing-status');
 const tell=(text,error=false)=>{notice.textContent=text;notice.classList.toggle('error',error)};
 if(form){try{assertPaymentSandbox();const c=await client();if(!await currentUser())throw new Error('Sign in with a sandbox administrator account.');const {data,error}=await c.rpc('is_academy_admin');if(error||!data)throw new Error('Administrator access required.');form.querySelector('fieldset').disabled=false;const id=form.elements.course;id.value=new URLSearchParams(location.search).get('course')||'';

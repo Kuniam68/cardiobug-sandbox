@@ -1,4 +1,4 @@
-import {validateCourse} from './course-model.js';
+import {validateCourse} from './course-model.js?v=trial-1';
 
 export function assertEditableCourse(course) {
   validateCourse(course);

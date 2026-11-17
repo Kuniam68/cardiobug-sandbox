@@ -6,10 +6,10 @@ import {config} from '../assets/config.js';
 import {safeNext} from '../assets/routes.js';
 const root=new URL('../',import.meta.url);
 
-test('immutable public configuration enforces sandbox identity and disabled checkout',()=>{
+test('immutable public configuration enforces sandbox identity and simulation-only checkout',()=>{
   assert.equal(config.supabaseUrl,'https://szqiueneqmktiilagbdv.supabase.co');
   assert.match(config.supabasePublishableKey,/^sb_publishable_/);
-  assert.equal(config.paymentSandboxEnabled,false);
+  assert.equal(config.paymentSandboxEnabled,true);
   assert.equal(config.turnstileMode,'optional');
   assert.ok(Object.isFrozen(config));
 });

@@ -1,4 +1,4 @@
-import {config} from './config.js';
+import {config} from './config.js?v=trial-1';
 export function captchaOptions(token){return token?{captchaToken:token}:{}}
 export function captchaRequired(settings=config){return settings.turnstileMode==='required'}
 let loader;
