@@ -11,9 +11,10 @@ const $=s=>document.querySelector(s);
 const isRecoveryPage=document.querySelector('#auth-form')?.dataset.mode==='reset-password';
 const recoveryCapture=isRecoveryPage?captureRecoveryLink(location,history):null;
 const params=new URLSearchParams(location.search);
-if(!isRecoveryPage)await loadCourses();
+const needsCatalog=Boolean($('#course-detail')||$('#lesson-page')||$('#dashboard-body')||document.querySelector('[data-course-grid]')||document.querySelector('[data-featured-course]')||document.querySelector('[data-first-lesson]'));
+if(needsCatalog&&!isRecoveryPage)await loadCourses();
 let paidCourseIds=new Set(),lessonLocked=false,pricingVerified=!configured,activeAccess=null,coursePrices=new Map();
-if(configured&&!isRecoveryPage){
+if(configured&&needsCatalog&&!isRecoveryPage){
  try{paidCourseIds=await paymentCatalog();pricingVerified=true}catch{lessonLocked=true}
  const courseId=params.get('course')||params.get('id');
  if(courseId&&getCourse(courseId)){
@@ -23,11 +24,11 @@ if(configured&&!isRecoveryPage){
   }catch{activeAccess={verified:false};lessonLocked=true}
  }
 }
-if(configured&&!isRecoveryPage){
+if(configured&&needsCatalog&&!isRecoveryPage){
  try{coursePrices=await readStudentPrices(client,courses.filter(c=>paidCourseIds.has(c.id)).map(c=>c.id))}catch{/* Paid status stays intact; price summaries show unavailable amounts. */}
 }
 function priceSummary(c){return studentPriceSummary(coursePrices.get(c.id),{paid:paidCourseIds.has(c.id),verified:pricingVerified,checkoutEnabled:sandboxEnabled()})}
-const catalogNotice=document.getElementById('catalog-notice');if(catalogNotice){catalogNotice.textContent=catalogStatus==='live'?'':catalogStatus==='empty'?'No courses are published yet. New learning material is being prepared.':catalogStatus==='unavailable'?'Published courses could not be loaded. Showing clearly labeled sample content.':'Sample learning library — course materials are being prepared.';if(!pricingVerified){catalogNotice.textContent='Course availability could not be verified. Enrollment is temporarily unavailable.';}catalogNotice.hidden=catalogStatus==='live'&&pricingVerified;}
+const catalogNotice=document.getElementById('catalog-notice');if(catalogNotice){catalogNotice.textContent=catalogStatus==='live'?'':catalogStatus==='empty'?'No courses are published yet. New learning material is being prepared.':catalogStatus==='unavailable'?'Published courses could not be loaded. Showing clearly labeled sample content.':'Sample learning library — course materials are being prepared.';if(!pricingVerified){catalogNotice.textContent='Course availability could not be verified. Enrollment is temporarily unavailable.';}catalogNotice.hidden=!needsCatalog||(catalogStatus==='live'&&pricingVerified);}
 const firstCourse=courses[0];
 document.querySelectorAll('[data-featured-course]').forEach(a=>a.href=firstCourse?'course.html?id='+firstCourse.id:'courses.html');
 document.querySelectorAll('[data-first-lesson]').forEach(a=>{const freePreview=firstCourse&&pricingVerified&&!paidCourseIds.has(firstCourse.id);a.href=freePreview?'lesson.html?course='+firstCourse.id+'&lesson='+firstCourse.lessons[0].id:'courses.html';a.textContent=freePreview?(firstCourse.isSample?'Try a sample lesson ↗':'Try a free lesson ↗'):'Browse the catalog ↗'});
@@ -36,7 +37,7 @@ const escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
 function status(el,text,error=false){if(!el)return;el.textContent=text;el.classList.toggle('error',error)}
 function card(c,extra=''){return `<article class="course-card"><a class="course-art ${c.art}" href="course.html?id=${c.id}" aria-label="Explore ${escape(c.subtitle)}"><span class="topic">${escape(c.category.toUpperCase())}</span>${art(c.art)}<span class="art-index">${String(courses.indexOf(c)+1).padStart(2,'0')}</span></a><div class="card-body"><div class="meta">${c.isSample?'SAMPLE COURSE · ':''}${escape(c.level)} · ${c.lessons.length} LESSONS · ${c.minutes} MIN</div><h3><a href="course.html?id=${c.id}">${escape(c.title)}</a></h3><p>${escape(c.description)}</p>${priceSummary(c)}${extra}<div class="card-foot"><span>${!pricingVerified?'Availability unverified':paidCourseIds.has(c.id)?(sandboxEnabled()?'Paid course · locked without enrollment':'Paid course · checkout unavailable'):c.isSample?'Sample course':'Free course'}</span><a href="course.html?id=${c.id}">Explore course ↗</a></div></div></article>`}
 function art(type){if(type==='ecg')return '<svg viewBox="0 0 200 120" aria-hidden="true"><path d="M0 65h45l10-12 8 20 13-55 17 87 14-53 10 13h83"/></svg>';if(type==='prevention')return '<svg viewBox="0 0 200 120" aria-hidden="true"><circle cx="100" cy="60" r="45"/><circle cx="100" cy="60" r="30"/><circle cx="100" cy="60" r="15"/><path d="M100 8v104M48 60h104"/></svg>';return '<svg viewBox="0 0 200 120" aria-hidden="true"><ellipse cx="100" cy="60" rx="44" ry="51"/><ellipse cx="100" cy="60" rx="23" ry="51"/><ellipse cx="100" cy="60" rx="44" ry="19"/><path d="M100 9v102M56 60h88"/></svg>'}
-const menu=$('#menu-toggle');if(menu)menu.onclick=()=>{const open=menu.getAttribute('aria-expanded')!=='true';menu.setAttribute('aria-expanded',String(open));$('#navigation').classList.toggle('is-open',open)};
+const menu=$('#menu-toggle');if(menu){const navigation=$('#navigation');const closeMenu=()=>{menu.setAttribute('aria-expanded','false');navigation.classList.remove('is-open')};menu.onclick=()=>{const open=menu.getAttribute('aria-expanded')!=='true';menu.setAttribute('aria-expanded',String(open));navigation.classList.toggle('is-open',open)};document.addEventListener('keydown',event=>{if(event.key==='Escape'&&menu.getAttribute('aria-expanded')==='true'){closeMenu();menu.focus()}});}
 document.querySelectorAll('[data-course-grid]').forEach(el=>el.innerHTML=courses.length?courses.map(c=>card(c)).join(''):'<div class="empty"><h3>New courses are on their way.</h3><p>Check back for published learning material.</p></div>');
 if($('#course-search')){for(const category of [...new Set(courses.map(c=>c.category))]){if(!Array.from($('#category').options).some(o=>o.value===category))$('#category').add(new Option(category,category));}const render=()=>{const q=$('#course-search').value.trim().toLowerCase(),cat=$('#category').value;const result=courses.filter(c=>(!cat||c.category===cat)&&`${c.title} ${c.subtitle} ${c.description}`.toLowerCase().includes(q));$('#catalog').innerHTML=result.length?result.map(c=>card(c)).join(''):'<div class="empty"><h3>No courses found</h3><p>Try another search or category.</p></div>';$('#course-count').textContent=`${result.length} ${result.length===1?'course':'courses'} available`;};$('#course-search').addEventListener('input',render);$('#category').addEventListener('change',render);render()}
 function missing(el){el.innerHTML='<div class="empty"><h1>Course not found.</h1><p>Choose an available course from the catalog.</p><a class="btn primary" href="courses.html">Browse courses ↗</a></div>'}
