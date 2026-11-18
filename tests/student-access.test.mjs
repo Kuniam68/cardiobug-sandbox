@@ -76,22 +76,23 @@ test('already authorized paid students do not self-enroll',async()=>{
   assert.equal(await h.context.enroll('fixture-course'),true);assert.equal(h.writes.length,0);
 });
 
-async function renderStudent({paid,access=false,checkout=false,lesson=false,failed=false,priceRows={BDT:10000,USD:500},priceFailure=false}) {
+async function renderStudent({paid,access=false,checkout=false,lesson=false,failed=false,priceRows={BDT:10000,USD:500},priceFailure=false,listing=false}) {
   const c={id:'fixture-course',title:'Fixture',subtitle:'Fixture course',category:'Testing',level:'Beginner',
     minutes:1,art:'anatomy',description:'Synthetic test',outcomes:['Learn'],sources:[],isSample:false,
     lessons:[{id:'fixture-lesson',title:'Lesson',minutes:1,body:'PRIVATE_MARKER',options:['a','b','c']} ]};
   const detail={innerHTML:''},lessonPage={innerHTML:''},grid={innerHTML:''},enroll={disabled:false};
-  const selectors=new Map(lesson?[['#lesson-page',lessonPage],['#quiz',{}],['#complete',{}]]:[['#course-detail',detail],['#enroll',enroll]]);
+  const calls=[];
+  const selectors=new Map(listing?[['#catalog',grid],['#course-search',{value:'',addEventListener(){}}],['#course-count',{textContent:''}],['#category',{value:'',options:[],add(o){this.options.push(o)},addEventListener(){}}]]:lesson?[['#lesson-page',lessonPage],['#quiz',{}],['#complete',{}]]:[['#course-detail',detail],['#enroll',enroll]]);
   const document={title:'',querySelector:s=>selectors.get(s)||null,getElementById:()=>null,
-    querySelectorAll:s=>s==='[data-course-grid]'?[grid]:[]};
-  const context=vm.createContext({document,location:{search:'?id=fixture-course&course=fixture-course&lesson=fixture-lesson'},
-    URLSearchParams,config:{},configured:true,courses:[c],getCourse:id=>id===c.id?c:null,loadCourses:async()=>{},catalogStatus:'live',
-    sandboxEnabled:()=>checkout,paymentCatalog:async()=>{if(failed)throw new Error('Network');return new Set(paid?[c.id]:[])},
+    querySelectorAll:s=>s==='[data-course-grid]'&&!listing?[grid]:[]};
+  const context=vm.createContext({document,location:{search:listing?'':'?id=fixture-course&course=fixture-course&lesson=fixture-lesson'},
+    URLSearchParams,Option:class{constructor(label,value){this.label=label;this.value=value;}},config:{},configured:true,courses:[c],getCourse:id=>id===c.id?c:null,loadCourses:async()=>{calls.push('load-catalog')},catalogStatus:'live',
+    sandboxEnabled:()=>checkout,paymentCatalog:async()=>{calls.push('verify-paid');if(failed)throw new Error('Network');return new Set(paid?[c.id]:[])},
     protectedCourse:async()=>{if(failed)throw new Error('Network');return {access:{paid,access:!paid||access}}},
     studentCourseControls,studentPriceSummary,hasAvailablePrice,client:async()=>null,readStudentPrices:async()=>{if(priceFailure)throw new Error('Price request failed');return new Map([[c.id,priceRows]])},currentUser:async()=>null});
   const source=readFileSync(new URL('../assets/app.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'');
   await vm.runInContext('(async()=>{'+source+'})()',context);
-  return {detail:detail.innerHTML,lesson:lessonPage.innerHTML,grid:grid.innerHTML};
+  return {calls,detail:detail.innerHTML,lesson:lessonPage.innerHTML,grid:grid.innerHTML};
 }
 test('rendered paid course has disabled unavailable controls without free preview',async()=>{
   const html=await renderStudent({paid:true});
@@ -171,3 +172,5 @@ test('existing paid access stays available even when pricing fails',async()=>{
   const html=await renderStudent({paid:true,access:true,priceFailure:true});
   assert.match(html.detail,/Continue learning/);assert.doesNotMatch(html.detail,/id="enroll" disabled/);
 });
+
+test('actual catalog container loads published courses and independent paid prices without a generic grid marker',async()=>{const html=await renderStudent({paid:true,listing:true});assert.deepEqual(html.calls,['load-catalog','verify-paid']);assert.match(html.grid,/৳100\.00/);assert.match(html.grid,/\$5\.00/);assert.match(html.grid,/Paid course · checkout unavailable/);});

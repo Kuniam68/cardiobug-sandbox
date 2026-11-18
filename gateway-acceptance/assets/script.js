@@ -1,0 +1,12 @@
+"use strict";
+const menuButton=document.querySelector("#menu-toggle");
+const navigation=document.querySelector("#navigation");
+menuButton?.addEventListener("click",()=>{const open=menuButton.getAttribute("aria-expanded")!=="true";menuButton.setAttribute("aria-expanded",String(open));navigation.classList.toggle("open",open)});
+document.addEventListener("keydown",event=>{if(event.key==="Escape"){navigation?.classList.remove("open");menuButton?.setAttribute("aria-expanded","false")}});
+document.querySelector("#year").textContent=String(new Date().getFullYear());
+document.querySelector("#print-guide")?.addEventListener("click",()=>window.print());
+const dateInput=document.querySelector("#date");
+const localDate=new Date();localDate.setMinutes(localDate.getMinutes()-localDate.getTimezoneOffset());
+if(dateInput)dateInput.min=localDate.toISOString().slice(0,10);
+document.querySelector("#appointment-form")?.addEventListener("submit",event=>{event.preventDefault();const form=event.currentTarget;if(!form.reportValidity())return;const result=document.querySelector("#form-result");if(dateInput.value<dateInput.min){dateInput.setCustomValidity("Choose today or a future date.");dateInput.reportValidity();return;}result.textContent="Demo review: "+form.elements.visit.value+" · "+form.elements.date.value+" · "+form.elements.period.value+". No appointment has been booked. No information has been sent or saved.";result.hidden=false;result.focus()});
+dateInput?.addEventListener("input",()=>dateInput.setCustomValidity(""));

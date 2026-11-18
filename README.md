@@ -27,3 +27,8 @@ The progress RPC verifies enrollment and the original quiz answer before saving 
 To pause simulation, disable `payment_sandbox_settings.enabled` as owner and turn off the frontend flag. Keep data/history; do not delete users or course data as a stop mechanism. See `supabase/RECOVERY.md`.
 
 Tests: `npm test`; static validation: `npm run check`. Migrations and Edge Function source are under `supabase/`. The older audit document describes the previous checkout-disabled baseline.
+
+
+## Official provider acceptance (separate from dummy checkout)
+
+The isolated `gateway-acceptance/` area uses SSLCOMMERZ official sandbox sessions, not dummy outcome buttons. It shares this sandbox project and existing test logins. Server credentials/mode are not configured, so gateway checkout remains unavailable. Production is never targeted. See the production repository payment operations guide for secure sandbox credential setup and the acceptance checklist. Existing dummy payments, accounts, course content/prices and progress are preserved.

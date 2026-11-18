@@ -12,7 +12,7 @@ const $=s=>document.querySelector(s);
 const isRecoveryPage=document.querySelector('#auth-form')?.dataset.mode==='reset-password';
 const recoveryCapture=isRecoveryPage?captureRecoveryLink(location,history):null;
 const params=new URLSearchParams(location.search);
-const needsCatalog=Boolean($('#course-detail')||$('#lesson-page')||$('#dashboard-body')||document.querySelector('[data-course-grid]')||document.querySelector('[data-featured-course]')||document.querySelector('[data-first-lesson]'));
+const needsCatalog=Boolean($('#catalog')||$('#course-search')||$('#course-detail')||$('#lesson-page')||$('#dashboard-body')||document.querySelector('[data-course-grid]')||document.querySelector('[data-featured-course]')||document.querySelector('[data-first-lesson]'));
 if(needsCatalog&&!isRecoveryPage)await loadCourses();
 let paidCourseIds=new Set(),lessonLocked=false,pricingVerified=!configured,activeAccess=null,coursePrices=new Map();
 if(configured&&needsCatalog&&!isRecoveryPage){

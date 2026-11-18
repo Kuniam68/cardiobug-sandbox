@@ -2,3 +2,7 @@ project_id = "szqiueneqmktiilagbdv"
 [functions.payments-sandbox]
 # Every bearer token is validated with this project Auth getUser().
 verify_jwt = false
+
+[functions.academy-payments]
+# Authenticated actions verify getUser; provider callbacks use server validation.
+verify_jwt = false
